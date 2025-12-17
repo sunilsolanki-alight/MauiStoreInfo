@@ -1,14 +1,15 @@
 name: .NET 10 Android Build
-
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
+  workflow_dispatch:
+    inputs:
+      maui-branch:
+        required: true
+        type: string
+        default: "develop"
 
 jobs:
   build:
-    # Use a specifically pinned image version IF your GH org supports it
-    runs-on: ubuntu-24.04-20251126  # fallback: ubuntu-24.04
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +21,9 @@ jobs:
 
       - name: Display .NET version
         run: dotnet --version
+
+      - name: Print runner image version
+        run: cat /etc/image-release || echo "Image version info not found"
 
       - name: Restore dependencies
         run: dotnet restore
