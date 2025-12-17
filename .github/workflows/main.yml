@@ -1,0 +1,31 @@
+name: .NET 10 Android Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  build:
+    # Use a specifically pinned image version IF your GH org supports it
+    runs-on: ubuntu-24.04-20251126  # fallback: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET 10.x
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Display .NET version
+        run: dotnet --version
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --configuration Release
+
+      - name: Run Android build
+        run: dotnet build -t:Build -f:net10.0-android
