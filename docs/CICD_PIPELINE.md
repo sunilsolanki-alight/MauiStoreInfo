@@ -110,8 +110,8 @@ The CI/CD pipeline consists of multiple workflows that handle different aspects 
 dotnet restore src/StoreInfoPlugin.sln
 
 # Build for a specific platform
-dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c Release -f net7.0-android
-dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c Release -f net7.0-ios
+dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c Release -f net10.0-android
+dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c Release -f net10.0-ios
 
 # Format code
 dotnet format src/StoreInfoPlugin.sln

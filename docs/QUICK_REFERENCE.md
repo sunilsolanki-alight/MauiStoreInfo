@@ -12,8 +12,8 @@ dotnet restore src/StoreInfoPlugin.sln
 dotnet build src/StoreInfoPlugin.sln -c Release
 
 # Build specific platform
-dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c Release -f net7.0-android
-dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c Release -f net7.0-ios
+dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c Release -f net10.0-android
+dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c Release -f net10.0-ios
 
 # Format code
 dotnet format src/StoreInfoPlugin.sln
@@ -168,19 +168,19 @@ After successful builds:
 
 ### Android
 - Builds on Ubuntu runners
-- Target: net7.0-android
+- Target: net10.0-android
 - Fast build times (~5 min)
 
 ### iOS
 - Builds on macOS-13 runners
-- Target: net7.0-ios
+- Target: net10.0-ios
 - Requires Xcode
 - Slower build times (~10-15 min)
 - Higher runner costs
 
 ### Windows
 - Builds on Windows runners
-- Target: net7.0-windows10.0.19041.0
+- Target: net10.0-windows10.0.19041.0
 - Moderate build times (~5-10 min)
 
 ### Xamarin

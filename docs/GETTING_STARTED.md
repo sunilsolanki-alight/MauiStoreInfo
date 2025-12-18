@@ -7,7 +7,7 @@ This guide will help you set up and start using the CI/CD pipeline for the MauiS
 Before you begin, ensure you have:
 
 1. **Development Environment:**
-   - .NET 8.0 SDK or later
+   - .NET 10.0 SDK or later
    - Visual Studio 2022 or Visual Studio Code
    - Git installed and configured
 
@@ -339,7 +339,7 @@ git push
 dotnet list src/StoreInfoPlugin.sln package --vulnerable --include-transitive
 
 # Update a specific package
-dotnet add src/StoreInfoMaui/StoreInfoMaui.csproj package System.Text.Json --version 8.0.0
+dotnet add src/StoreInfoMaui/StoreInfoMaui.csproj package System.Text.Json --version 10.0.0
 
 # Or update all packages (carefully)
 # Review each update individually
