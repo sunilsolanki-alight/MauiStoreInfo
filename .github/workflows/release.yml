@@ -20,6 +20,9 @@ env:
   DOTNET_VERSION: '8.0.x'
   CONFIGURATION: 'Release'
 
+permissions:
+  contents: read
+
 jobs:
   build-packages:
     name: Build NuGet Packages
@@ -116,6 +119,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-packages
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code

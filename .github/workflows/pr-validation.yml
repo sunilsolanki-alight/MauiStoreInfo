@@ -9,6 +9,9 @@ env:
   DOTNET_VERSION: '8.0.x'
   CONFIGURATION: 'Release'
 
+permissions:
+  contents: read
+
 jobs:
   pr-info:
     name: PR Information
