@@ -1,0 +1,114 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - 'src/**/*.cs'
+      - '.github/workflows/code-quality.yml'
+  pull_request:
+    branches: [ main, master, develop ]
+    paths:
+      - 'src/**/*.cs'
+      - '.github/workflows/code-quality.yml'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+
+permissions:
+  contents: read
+
+jobs:
+  format-check:
+    name: Code Formatting Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore src/StoreInfoPlugin.sln
+
+      - name: Check code formatting
+        run: |
+          dotnet format src/StoreInfoPlugin.sln --verify-no-changes --verbosity diagnostic || {
+            echo "Code formatting issues detected. Run 'dotnet format' locally to fix."
+            exit 1
+          }
+
+  lint-analysis:
+    name: Lint Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore src/StoreInfoPlugin.sln
+
+      - name: Build with analyzers
+        run: |
+          dotnet build src/StoreInfoPlugin.sln \
+            -c Release \
+            --no-restore \
+            /p:EnforceCodeStyleInBuild=true \
+            /p:TreatWarningsAsErrors=false
+
+  code-metrics:
+    name: Code Metrics
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Count lines of code
+        run: |
+          echo "## Code Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### C# Files" >> $GITHUB_STEP_SUMMARY
+          find src -name "*.cs" | wc -l | xargs echo "Files:" >> $GITHUB_STEP_SUMMARY
+          find src -name "*.cs" -exec cat {} \; | wc -l | xargs echo "Lines:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Project Files" >> $GITHUB_STEP_SUMMARY
+          find src -name "*.csproj" | wc -l | xargs echo "Projects:" >> $GITHUB_STEP_SUMMARY
+
+  quality-summary:
+    name: Quality Summary
+    runs-on: ubuntu-latest
+    needs: [format-check, lint-analysis, code-metrics]
+    if: always()
+    
+    steps:
+      - name: Quality Check Summary
+        run: |
+          echo "Code Quality Results:"
+          echo "- Format Check: ${{ needs.format-check.result }}"
+          echo "- Lint Analysis: ${{ needs.lint-analysis.result }}"
+          echo "- Code Metrics: ${{ needs.code-metrics.result }}"
+          
+          if [ "${{ needs.format-check.result }}" == "failure" ] || \
+             [ "${{ needs.lint-analysis.result }}" == "failure" ]; then
+            echo "⚠️ Code quality issues detected!"
+            exit 1
+          fi
+          
+          echo "✅ Code quality checks passed!"
