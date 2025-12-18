@@ -14,8 +14,8 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '8.0.x'
-  DOTNET_MAUI_VERSION: '8.0.x'
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_MAUI_VERSION: '10.0.x'
   CONFIGURATION: 'Release'
 
 permissions:
@@ -44,14 +44,14 @@ jobs:
         run: dotnet restore src/StoreInfoPlugin.sln
 
       - name: Build StoreInfoMaui (Android)
-        run: dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c ${{ env.CONFIGURATION }} -f net7.0-android --no-restore
+        run: dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c ${{ env.CONFIGURATION }} -f net10.0-android --no-restore
 
       - name: Upload Android build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: android-build
           path: |
-            src/StoreInfoMaui/bin/${{ env.CONFIGURATION }}/net7.0-android/
+            src/StoreInfoMaui/bin/${{ env.CONFIGURATION }}/net10.0-android/
           retention-days: 7
 
   build-ios:
@@ -76,14 +76,14 @@ jobs:
         run: dotnet restore src/StoreInfoPlugin.sln
 
       - name: Build StoreInfoMaui (iOS)
-        run: dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c ${{ env.CONFIGURATION }} -f net7.0-ios --no-restore
+        run: dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c ${{ env.CONFIGURATION }} -f net10.0-ios --no-restore
 
       - name: Upload iOS build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ios-build
           path: |
-            src/StoreInfoMaui/bin/${{ env.CONFIGURATION }}/net7.0-ios/
+            src/StoreInfoMaui/bin/${{ env.CONFIGURATION }}/net10.0-ios/
           retention-days: 7
 
   build-windows:
@@ -108,14 +108,14 @@ jobs:
         run: dotnet restore src/StoreInfoPlugin.sln
 
       - name: Build StoreInfoMaui (Windows)
-        run: dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c ${{ env.CONFIGURATION }} -f net7.0-windows10.0.19041.0 --no-restore
+        run: dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj -c ${{ env.CONFIGURATION }} -f net10.0-windows10.0.19041.0 --no-restore
 
       - name: Upload Windows build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: |
-            src/StoreInfoMaui/bin/${{ env.CONFIGURATION }}/net7.0-windows10.0.19041.0/
+            src/StoreInfoMaui/bin/${{ env.CONFIGURATION }}/net10.0-windows10.0.19041.0/
           retention-days: 7
 
   build-xamarin:
