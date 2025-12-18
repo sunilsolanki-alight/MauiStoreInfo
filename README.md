@@ -1,9 +1,11 @@
-##  Store Info for Xamarin.Forms [![PayPal donate button](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4KHTXCBWYXTNG "Donate to this project using Paypal")
+##  Store Info for Xamarin.Forms & .NET MAUI [![PayPal donate button](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=4KHTXCBWYXTNG "Donate to this project using Paypal")
 
 
-Store Info for Xamarin Forms has a mechanism to extract the current information of your app in store (playstore/appstore) using the package name/bundle id.  Install this in your PCL and platform specific projects.
+Store Info for Xamarin Forms and .NET MAUI has a mechanism to extract the current information of your app in store (playstore/appstore) using the package name/bundle id.  Install this in your PCL and platform specific projects.
 
-[![Build Status](https://mecodes.visualstudio.com/XFStoreInfo/_apis/build/status/mecvillarina.StoreInfo?branchName=master)](https://mecodes.visualstudio.com/XFStoreInfo/_apis/build/status/mecvillarina.StoreInfo?branchName=master)
+[![CI Build](https://github.com/sunilsolanki-alight/MauiStoreInfo/actions/workflows/ci.yml/badge.svg)](https://github.com/sunilsolanki-alight/MauiStoreInfo/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/sunilsolanki-alight/MauiStoreInfo/actions/workflows/security.yml/badge.svg)](https://github.com/sunilsolanki-alight/MauiStoreInfo/actions/workflows/security.yml)
+[![Code Quality](https://github.com/sunilsolanki-alight/MauiStoreInfo/actions/workflows/code-quality.yml/badge.svg)](https://github.com/sunilsolanki-alight/MauiStoreInfo/actions/workflows/code-quality.yml)
 [![NuGet](https://img.shields.io/nuget/v/Plugin.StoreInfo.svg?label=nuget)](https://www.nuget.org/packages/Plugin.StoreInfo)
 
 Nuget: https://www.nuget.org/packages/Plugin.StoreInfo/
@@ -73,6 +75,34 @@ await CrossStoreInfo.Current.OpenAppInStore("appName");
 ```
 
 - `appName` should be the app's **bundle identifier** (`CFBundleIdentifier`) on iOS and the app's **package name** on Android.
+
+## CI/CD Pipeline
+
+This project uses a comprehensive CI/CD pipeline powered by GitHub Actions for automated building, testing, and deployment.
+
+### Workflows
+
+- **CI Build**: Automated builds for Android, iOS, Windows, and Xamarin platforms
+- **PR Validation**: Quick validation checks for pull requests
+- **Release & Publish**: Automated NuGet package creation and publishing
+- **Security Scan**: Regular security vulnerability scanning
+- **Code Quality**: Code formatting and linting checks
+
+### For Developers
+
+Before committing code, ensure:
+```bash
+# Format code
+dotnet format src/StoreInfoPlugin.sln
+
+# Build and verify
+dotnet build src/StoreInfoPlugin.sln -c Release
+```
+
+### Documentation
+
+- [CI/CD Pipeline Documentation](docs/CICD_PIPELINE.md) - Detailed workflow documentation
+- [Pipeline Architecture](docs/PIPELINE_ARCHITECTURE.md) - Architecture diagrams and design
 
 ## License
 The Apache License 2.0 see [License file](LICENSE)

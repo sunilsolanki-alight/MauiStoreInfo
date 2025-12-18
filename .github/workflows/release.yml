@@ -1,0 +1,220 @@
+name: Release and Publish
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.0.5)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Is this a pre-release?'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  CONFIGURATION: 'Release'
+
+jobs:
+  build-packages:
+    name: Build NuGet Packages
+    runs-on: windows-latest
+    
+    outputs:
+      package-version: ${{ steps.set-version.outputs.version }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install .NET MAUI workload
+        run: dotnet workload install maui
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Determine version
+        id: set-version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          fi
+          echo "Version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Restore NuGet packages
+        run: nuget restore src/StoreInfoPlugin.sln
+
+      - name: Build Xamarin Plugin with NuGet package
+        run: |
+          msbuild src/StoreInfo/StoreInfo.csproj `
+            /p:Configuration=${{ env.CONFIGURATION }} `
+            /p:PackageVersion=${{ steps.set-version.outputs.version }} `
+            /p:AssemblyVersion=${{ steps.set-version.outputs.version }} `
+            /p:AssemblyFileVersion=${{ steps.set-version.outputs.version }} `
+            /p:GeneratePackageOnBuild=true
+
+      - name: Build MAUI Plugin
+        run: |
+          dotnet restore src/StoreInfoMaui/StoreInfoMaui.csproj
+          dotnet build src/StoreInfoMaui/StoreInfoMaui.csproj `
+            -c ${{ env.CONFIGURATION }} `
+            /p:PackageVersion=${{ steps.set-version.outputs.version }} `
+            /p:Version=${{ steps.set-version.outputs.version }}
+
+      - name: Pack MAUI NuGet package
+        run: |
+          dotnet pack src/StoreInfoMaui/StoreInfoMaui.csproj `
+            -c ${{ env.CONFIGURATION }} `
+            --no-build `
+            /p:PackageVersion=${{ steps.set-version.outputs.version }} `
+            /p:Version=${{ steps.set-version.outputs.version }} `
+            -o ./artifacts
+
+      - name: Find NuGet packages
+        id: find-packages
+        run: |
+          $xamarinPkg = Get-ChildItem -Path "src/StoreInfo/bin/${{ env.CONFIGURATION }}" -Filter "*.nupkg" -Recurse | Select-Object -First 1
+          $mauiPkg = Get-ChildItem -Path "./artifacts" -Filter "*.nupkg" -Recurse | Select-Object -First 1
+          
+          echo "Xamarin package: $($xamarinPkg.FullName)"
+          echo "MAUI package: $($mauiPkg.FullName)"
+          
+          # Copy packages to artifacts folder
+          New-Item -ItemType Directory -Force -Path ./packages
+          if ($xamarinPkg) { Copy-Item $xamarinPkg.FullName -Destination ./packages/ }
+          if ($mauiPkg) { Copy-Item $mauiPkg.FullName -Destination ./packages/ }
+        shell: pwsh
+
+      - name: Upload NuGet packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./packages/*.nupkg
+          retention-days: 90
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: build-packages
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download NuGet packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./packages
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'push' && github.ref_name || format('v{0}', github.event.inputs.version) }}
+          name: Release ${{ needs.build-packages.outputs.package-version }}
+          draft: false
+          prerelease: ${{ github.event.inputs.prerelease == 'true' }}
+          files: |
+            ./packages/*.nupkg
+          body: |
+            ## Release ${{ needs.build-packages.outputs.package-version }}
+            
+            ### Changes in this release
+            
+            - See [CHANGELOG.md](CHANGELOG.md) for details
+            
+            ### NuGet Packages
+            
+            This release includes the following NuGet packages:
+            - Plugin.StoreInfo (Xamarin.Forms)
+            - StoreInfoMaui (.NET MAUI)
+            
+            ### Installation
+            
+            ```bash
+            dotnet add package Plugin.StoreInfo --version ${{ needs.build-packages.outputs.package-version }}
+            # or for MAUI
+            dotnet add package StoreInfoMaui --version ${{ needs.build-packages.outputs.package-version }}
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-nuget:
+    name: Publish to NuGet.org
+    runs-on: ubuntu-latest
+    needs: [build-packages, create-release]
+    if: github.event_name == 'push' && !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'alpha')
+    
+    steps:
+      - name: Download NuGet packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./packages
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish to NuGet.org
+        run: |
+          for pkg in ./packages/*.nupkg; do
+            echo "Publishing $pkg to NuGet.org..."
+            dotnet nuget push "$pkg" \
+              --api-key ${{ secrets.NUGET_API_KEY }} \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+        shell: bash
+
+  publish-github-packages:
+    name: Publish to GitHub Packages
+    runs-on: ubuntu-latest
+    needs: [build-packages, create-release]
+    permissions:
+      packages: write
+      contents: read
+    
+    steps:
+      - name: Download NuGet packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./packages
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish to GitHub Packages
+        run: |
+          for pkg in ./packages/*.nupkg; do
+            echo "Publishing $pkg to GitHub Packages..."
+            dotnet nuget push "$pkg" \
+              --api-key ${{ secrets.GITHUB_TOKEN }} \
+              --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" \
+              --skip-duplicate
+          done
+        shell: bash
